@@ -99,6 +99,12 @@ Database connection is managed through Neon serverless PostgreSQL with automatic
 
 ## Deployment Strategy
 
+### Local Development
+- **Quick Setup**: Run `./setup-local.sh` (Linux/macOS) or `setup-local.bat` (Windows)
+- **Manual Setup**: Copy `.env.example` to `.env`, install PostgreSQL, run `npm run dev`
+- **Database**: Supports local PostgreSQL with automatic detection
+- **Dependencies**: Python 3, Java JDK, GCC for code execution
+
 ### Production Build
 - Frontend builds to static files served by Express
 - Backend compiles to optimized JavaScript bundle
@@ -106,22 +112,32 @@ Database connection is managed through Neon serverless PostgreSQL with automatic
 
 ### Environment Configuration
 - Database connection via `DATABASE_URL` environment variable
-- Neon PostgreSQL for managed database hosting
+- Auto-detects Neon PostgreSQL vs local PostgreSQL
 - Session configuration for production security
 
 ### Development Workflow
+- `./start-local.sh`: Quick start for local development
 - `npm run dev`: Development server with hot reload
 - `npm run build`: Production build for both frontend and backend
 - `npm run db:push`: Database schema synchronization
 
 ## Recent Changes
 
-### Code Execution Fix (January 20, 2025)
-- Fixed Python execution error by installing Python 3.11
-- Added GCC and Java support for multi-language code execution  
-- Application now supports all programming languages (Python, JavaScript, Java, C++, C)
-- Improved error handling for student registration with specific messages for duplicate emails
-- Enhanced user experience with automatic email field clearing on duplicate email errors
+### Local Development Setup (January 20, 2025)
+- Added comprehensive local PostgreSQL support alongside cloud Neon database
+- Created automated setup scripts for Linux/macOS (setup-local.sh) and Windows (setup-local.bat)
+- Enhanced database configuration to auto-detect Neon vs local PostgreSQL
+- Added startup scripts (start-local.sh/start-local.bat) for easy local development
+- Created detailed installation guide (README-Local-Setup.md) with troubleshooting
+- Added environment template (.env.example) for easy configuration
+- Platform now supports both online (Replit) and offline (local machine) development
+
+### Dynamic Code Execution Enhancement (January 20, 2025)
+- Fixed dynamic function name detection in code execution service
+- Code execution now works with any user-defined function names (not hardcoded)
+- Enhanced admin panel with full edit functionality for coding problems
+- Improved submission system to save all attempts with proper scoring
+- Added detailed user feedback with toast notifications for submission results
 
 ### Database Migration (January 20, 2025)
 - Migrated from in-memory storage to PostgreSQL database
