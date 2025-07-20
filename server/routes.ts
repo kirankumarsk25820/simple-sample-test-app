@@ -260,6 +260,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If this is a submission (studentId provided), save it
       if (studentId) {
+        // Calculate score based on passed test cases
+        const passedTests = result.testResults?.filter(t => t.passed).length || 0;
+        const totalTests = result.testResults?.length || 0;
+        const score = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+
         const submission = await storage.createCodingSubmission({
           studentId,
           problemId,
@@ -268,10 +273,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         await storage.updateCodingSubmission(submission.id, {
-          status: result.success ? 'accepted' : 'failed',
+          status: result.success ? 'accepted' : (score > 0 ? 'partial' : 'failed'),
           testResults: result.testResults,
+          score: score,
           executionTime: result.executionTime
         });
+
+        // Also include score in response for UI feedback
+        result.score = score;
       }
 
       res.json(result);

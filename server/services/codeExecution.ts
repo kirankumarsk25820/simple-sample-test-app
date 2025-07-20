@@ -107,12 +107,25 @@ export class CodeExecutionService {
   }
 
   private prepareCode(code: string, language: string, input: any): string {
+    // Extract function name from code to make it dynamic
+    const functionName = this.extractFunctionName(code, language);
+    
     switch (language) {
       case 'python':
-        return `${code}\n\n# Test execution\nif __name__ == "__main__":\n    result = two_sum(${JSON.stringify(input.nums)}, ${input.target})\n    print(result)`;
+        if (functionName) {
+          return `${code}\n\n# Test execution\nif __name__ == "__main__":\n    result = ${functionName}(${this.formatInputForLanguage(input, language)})\n    print(result)`;
+        } else {
+          // If no function found, assume the code is executable
+          return `${code}\n\n# Test with input: ${JSON.stringify(input)}`;
+        }
       
       case 'javascript':
-        return `${code}\n\n// Test execution\nconst result = twoSum(${JSON.stringify(input.nums)}, ${input.target});\nconsole.log(JSON.stringify(result));`;
+        if (functionName) {
+          return `${code}\n\n// Test execution\nconst result = ${functionName}(${this.formatInputForLanguage(input, language)});\nconsole.log(JSON.stringify(result));`;
+        } else {
+          // If no function found, assume the code is executable
+          return `${code}\n\n// Test with input: ${JSON.stringify(input)}`;
+        }
       
       case 'java':
         return `
@@ -122,10 +135,7 @@ public class Solution {
     
     public static void main(String[] args) {
         Solution sol = new Solution();
-        int[] nums = {${input.nums.join(', ')}};
-        int target = ${input.target};
-        int[] result = sol.twoSum(nums, target);
-        System.out.println(Arrays.toString(result));
+        ${this.generateJavaTestCode(input, functionName)}
     }
 }`;
       
@@ -138,15 +148,7 @@ using namespace std;
 ${code}
 
 int main() {
-    vector<int> nums = {${input.nums.join(', ')}};
-    int target = ${input.target};
-    vector<int> result = twoSum(nums, target);
-    cout << "[";
-    for (int i = 0; i < result.size(); i++) {
-        cout << result[i];
-        if (i < result.size() - 1) cout << ", ";
-    }
-    cout << "]" << endl;
+    ${this.generateCppTestCode(input, functionName)}
     return 0;
 }`;
       
@@ -158,23 +160,105 @@ int main() {
 ${code}
 
 int main() {
-    int nums[] = {${input.nums.join(', ')}};
-    int target = ${input.target};
-    int returnSize;
-    int* result = twoSum(nums, ${input.nums.length}, target, &returnSize);
-    printf("[");
-    for (int i = 0; i < returnSize; i++) {
-        printf("%d", result[i]);
-        if (i < returnSize - 1) printf(", ");
-    }
-    printf("]\\n");
-    free(result);
+    ${this.generateCTestCode(input, functionName)}
     return 0;
 }`;
       
       default:
         throw new Error(`Unsupported language: ${language}`);
     }
+  }
+
+  private extractFunctionName(code: string, language: string): string | null {
+    let functionRegex: RegExp;
+    
+    switch (language) {
+      case 'python':
+        functionRegex = /def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/;
+        break;
+      case 'javascript':
+        functionRegex = /function\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(|const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=|let\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=/;
+        break;
+      case 'java':
+        functionRegex = /public\s+(?:static\s+)?[a-zA-Z0-9\[\]]+\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/;
+        break;
+      case 'cpp':
+      case 'c':
+        functionRegex = /(?:int|void|char|float|double|\w+)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/;
+        break;
+      default:
+        return null;
+    }
+    
+    const match = code.match(functionRegex);
+    return match ? (match[1] || match[2] || match[3]) : null;
+  }
+
+  private formatInputForLanguage(input: any, language: string): string {
+    if (input.nums && input.target !== undefined) {
+      // Handle Two Sum style input
+      switch (language) {
+        case 'python':
+        case 'javascript':
+          return `${JSON.stringify(input.nums)}, ${input.target}`;
+        default:
+          return JSON.stringify(input);
+      }
+    }
+    
+    // Handle generic input
+    if (typeof input === 'object') {
+      return Object.values(input).map(v => JSON.stringify(v)).join(', ');
+    }
+    return JSON.stringify(input);
+  }
+
+  private generateJavaTestCode(input: any, functionName: string | null): string {
+    if (input.nums && input.target !== undefined) {
+      const funcName = functionName || 'twoSum';
+      return `
+        int[] nums = {${input.nums.join(', ')}};
+        int target = ${input.target};
+        int[] result = sol.${funcName}(nums, target);
+        System.out.println(Arrays.toString(result));`;
+    }
+    return `System.out.println("Test input: ${JSON.stringify(input)}");`;
+  }
+
+  private generateCppTestCode(input: any, functionName: string | null): string {
+    if (input.nums && input.target !== undefined) {
+      const funcName = functionName || 'twoSum';
+      return `
+    vector<int> nums = {${input.nums.join(', ')}};
+    int target = ${input.target};
+    vector<int> result = ${funcName}(nums, target);
+    cout << "[";
+    for (int i = 0; i < result.size(); i++) {
+        cout << result[i];
+        if (i < result.size() - 1) cout << ", ";
+    }
+    cout << "]" << endl;`;
+    }
+    return `cout << "Test input: ${JSON.stringify(input)}" << endl;`;
+  }
+
+  private generateCTestCode(input: any, functionName: string | null): string {
+    if (input.nums && input.target !== undefined) {
+      const funcName = functionName || 'twoSum';
+      return `
+    int nums[] = {${input.nums.join(', ')}};
+    int target = ${input.target};
+    int returnSize;
+    int* result = ${funcName}(nums, ${input.nums.length}, target, &returnSize);
+    printf("[");
+    for (int i = 0; i < returnSize; i++) {
+        printf("%d", result[i]);
+        if (i < returnSize - 1) printf(", ");
+    }
+    printf("]\\n");
+    free(result);`;
+    }
+    return `printf("Test input: %s\\n", "${JSON.stringify(input)}");`;
   }
 
   private writeCodeToFile(code: string, language: string, basePath: string): string {

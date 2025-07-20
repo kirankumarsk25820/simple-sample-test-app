@@ -446,6 +446,7 @@ function QuestionManagement({ questions }: any) {
 
 function CodingProblemManagement({ problems }: any) {
   const [isCreating, setIsCreating] = useState(false);
+  const [editingProblem, setEditingProblem] = useState<any>(null);
 
   const form = useForm({
     resolver: zodResolver(insertCodingProblemSchema.extend({
@@ -501,8 +502,44 @@ function CodingProblemManagement({ problems }: any) {
     },
   });
 
+  const updateProblemMutation = useMutation({
+    mutationFn: async (data: { id: number, updates: any }) => {
+      const response = await apiRequest('PUT', `/api/coding-problems/${data.id}`, data.updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coding-problems'] });
+      setEditingProblem(null);
+      form.reset();
+    },
+  });
+
   const onSubmit = (data: any) => {
-    createProblemMutation.mutate(data);
+    if (editingProblem) {
+      updateProblemMutation.mutate({ id: editingProblem.id, updates: data });
+    } else {
+      createProblemMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (problem: any) => {
+    setEditingProblem(problem);
+    form.reset({
+      title: problem.title,
+      description: problem.description,
+      difficulty: problem.difficulty,
+      tags: problem.tags,
+      testCases: problem.testCases,
+      templateCode: problem.templateCode,
+      constraints: problem.constraints || ""
+    });
+    setIsCreating(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProblem(null);
+    setIsCreating(false);
+    form.reset();
   };
 
   return (
@@ -518,7 +555,7 @@ function CodingProblemManagement({ problems }: any) {
       {isCreating && (
         <Card>
           <CardHeader>
-            <CardTitle>Create New Coding Problem</CardTitle>
+            <CardTitle>{editingProblem ? 'Edit Coding Problem' : 'Create New Coding Problem'}</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -591,10 +628,10 @@ function CodingProblemManagement({ problems }: any) {
                 </div>
 
                 <div className="flex space-x-3">
-                  <Button type="submit" disabled={createProblemMutation.isPending}>
-                    {createProblemMutation.isPending ? 'Saving...' : 'Save Problem'}
+                  <Button type="submit" disabled={createProblemMutation.isPending || updateProblemMutation.isPending}>
+                    {(createProblemMutation.isPending || updateProblemMutation.isPending) ? 'Saving...' : (editingProblem ? 'Update Problem' : 'Save Problem')}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
+                  <Button type="button" variant="outline" onClick={handleCancelEdit}>
                     Cancel
                   </Button>
                 </div>
@@ -624,10 +661,7 @@ function CodingProblemManagement({ problems }: any) {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => {
-                      // TODO: Implement edit functionality
-                      console.log('Edit problem:', problem.id);
-                    }}>
+                    <Button size="sm" variant="outline" onClick={() => handleEdit(problem)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
