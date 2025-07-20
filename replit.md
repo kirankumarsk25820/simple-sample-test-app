@@ -1,7 +1,7 @@
 # replit.md
 
 ## Overview
-This is a full-stack web application for conducting online coding assessments. The system combines multiple-choice questions (MCQ) and coding problems to evaluate student programming skills. It features a React frontend with a Node.js/Express backend, using PostgreSQL for data persistence and Drizzle ORM for database operations.
+This is a full-stack web application for conducting online coding assessments. The system combines multiple-choice questions (MCQ) and coding problems to evaluate student programming skills. It features a React frontend with a Node.js/Express backend, using PostgreSQL for data persistence and Drizzle ORM for database operations. The platform includes admin authentication and comprehensive assessment management.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -20,11 +20,13 @@ The frontend follows a component-based architecture with separate pages for asse
 ### Backend Architecture
 - **Runtime**: Node.js with TypeScript
 - **Framework**: Express.js for REST API
-- **Database**: PostgreSQL with Drizzle ORM
+- **Database**: PostgreSQL with Drizzle ORM and Neon serverless
+- **Storage**: DatabaseStorage class implementing IStorage interface
 - **Code Execution**: Custom service for running and testing submitted code
-- **Session Management**: Express sessions with PostgreSQL store
+- **Authentication**: Admin login system with email/password
+- **Data Seeding**: Automatic database seeding with sample content
 
-The backend provides RESTful APIs for managing students, questions, submissions, and assessment results. It includes services for code execution, grading, and assessment management.
+The backend provides RESTful APIs for managing students, questions, submissions, and assessment results. It includes services for code execution, grading, assessment management, and admin authentication.
 
 ### Database Design
 The system uses PostgreSQL with the following key tables:
@@ -34,6 +36,9 @@ The system uses PostgreSQL with the following key tables:
 - `mcq_answers`: Student responses to MCQ questions
 - `coding_submissions`: Code submissions with execution results
 - `assessment_results`: Final scores and assessment outcomes
+- `admins`: Administrator accounts with email/password authentication
+
+Database connection is managed through Neon serverless PostgreSQL with automatic seeding of sample questions, coding problems, and admin accounts.
 
 ## Key Components
 
@@ -50,10 +55,12 @@ The system uses PostgreSQL with the following key tables:
 - Real-time feedback on code execution
 
 ### Admin Panel
-- Question management for both MCQ and coding problems
-- Student progress monitoring
-- Assessment results and analytics
-- Real-time dashboard with completion statistics
+- **Authentication**: Secure admin login with email/password
+- **Question Management**: Create, edit, and delete MCQ and coding problems
+- **Student Monitoring**: Track student progress and assessment status
+- **Results Analytics**: View comprehensive assessment results and statistics
+- **Dashboard**: Real-time metrics and completion statistics
+- **Session Management**: Protected routes with logout functionality
 
 ### Timer System
 - Section-based timing (separate for MCQ and coding)
@@ -107,4 +114,20 @@ The system uses PostgreSQL with the following key tables:
 - `npm run build`: Production build for both frontend and backend
 - `npm run db:push`: Database schema synchronization
 
-The architecture prioritizes simplicity and reliability, with automatic grading, real-time feedback, and comprehensive admin tools for managing coding assessments.
+## Recent Changes
+
+### Database Migration (January 20, 2025)
+- Migrated from in-memory storage to PostgreSQL database
+- Implemented DatabaseStorage class replacing MemStorage
+- Added automatic database seeding with sample content
+- Enhanced admin authentication with persistent storage
+- Database includes comprehensive seed data for testing
+
+### Admin Authentication System
+- Separate admin login page with email/password authentication
+- Protected admin routes requiring authentication
+- Clean student interface without admin access links
+- Session management with logout functionality
+- Demo admin credentials: admin@codeassess.com / admin123
+
+The architecture prioritizes simplicity and reliability, with automatic grading, real-time feedback, persistent data storage, and comprehensive admin tools for managing coding assessments.

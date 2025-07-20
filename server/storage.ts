@@ -20,6 +20,8 @@ import {
   type Admin,
   type InsertAdmin,
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Student operations
@@ -372,4 +374,227 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // Student operations
+  async getStudent(id: number): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.id, id));
+    return student || undefined;
+  }
+
+  async getStudentByEmail(email: string): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.email, email));
+    return student || undefined;
+  }
+
+  async createStudent(insertStudent: InsertStudent): Promise<Student> {
+    const [student] = await db
+      .insert(students)
+      .values(insertStudent)
+      .returning();
+    return student;
+  }
+
+  async updateStudent(id: number, updates: Partial<Student>): Promise<Student | undefined> {
+    const [student] = await db
+      .update(students)
+      .set(updates)
+      .where(eq(students.id, id))
+      .returning();
+    return student || undefined;
+  }
+
+  async getAllStudents(): Promise<Student[]> {
+    return await db.select().from(students);
+  }
+
+  // MCQ Question operations
+  async getMCQQuestion(id: number): Promise<MCQQuestion | undefined> {
+    const [question] = await db.select().from(mcqQuestions).where(eq(mcqQuestions.id, id));
+    return question || undefined;
+  }
+
+  async getAllMCQQuestions(): Promise<MCQQuestion[]> {
+    return await db.select().from(mcqQuestions);
+  }
+
+  async createMCQQuestion(insertQuestion: InsertMCQQuestion): Promise<MCQQuestion> {
+    const [question] = await db
+      .insert(mcqQuestions)
+      .values(insertQuestion)
+      .returning();
+    return question;
+  }
+
+  async updateMCQQuestion(id: number, updates: Partial<MCQQuestion>): Promise<MCQQuestion | undefined> {
+    const [question] = await db
+      .update(mcqQuestions)
+      .set(updates)
+      .where(eq(mcqQuestions.id, id))
+      .returning();
+    return question || undefined;
+  }
+
+  async deleteMCQQuestion(id: number): Promise<boolean> {
+    const result = await db.delete(mcqQuestions).where(eq(mcqQuestions.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Coding Problem operations
+  async getCodingProblem(id: number): Promise<CodingProblem | undefined> {
+    const [problem] = await db.select().from(codingProblems).where(eq(codingProblems.id, id));
+    return problem || undefined;
+  }
+
+  async getAllCodingProblems(): Promise<CodingProblem[]> {
+    return await db.select().from(codingProblems);
+  }
+
+  async createCodingProblem(insertProblem: InsertCodingProblem): Promise<CodingProblem> {
+    const [problem] = await db
+      .insert(codingProblems)
+      .values(insertProblem)
+      .returning();
+    return problem;
+  }
+
+  async updateCodingProblem(id: number, updates: Partial<CodingProblem>): Promise<CodingProblem | undefined> {
+    const [problem] = await db
+      .update(codingProblems)
+      .set(updates)
+      .where(eq(codingProblems.id, id))
+      .returning();
+    return problem || undefined;
+  }
+
+  async deleteCodingProblem(id: number): Promise<boolean> {
+    const result = await db.delete(codingProblems).where(eq(codingProblems.id, id));
+    return result.rowCount > 0;
+  }
+
+  // MCQ Answer operations
+  async createMCQAnswer(insertAnswer: InsertMCQAnswer): Promise<MCQAnswer> {
+    // Check if answer already exists for this student/question combination
+    const [existingAnswer] = await db
+      .select()
+      .from(mcqAnswers)
+      .where(
+        and(
+          eq(mcqAnswers.studentId, insertAnswer.studentId),
+          eq(mcqAnswers.questionId, insertAnswer.questionId)
+        )
+      );
+
+    if (existingAnswer) {
+      // Update existing answer
+      const [updatedAnswer] = await db
+        .update(mcqAnswers)
+        .set({ selectedAnswer: insertAnswer.selectedAnswer })
+        .where(
+          and(
+            eq(mcqAnswers.studentId, insertAnswer.studentId),
+            eq(mcqAnswers.questionId, insertAnswer.questionId)
+          )
+        )
+        .returning();
+      return updatedAnswer;
+    } else {
+      // Create new answer
+      const [answer] = await db
+        .insert(mcqAnswers)
+        .values(insertAnswer)
+        .returning();
+      return answer;
+    }
+  }
+
+  async getMCQAnswersByStudent(studentId: number): Promise<MCQAnswer[]> {
+    return await db.select().from(mcqAnswers).where(eq(mcqAnswers.studentId, studentId));
+  }
+
+  async updateMCQAnswer(studentId: number, questionId: number, updates: Partial<MCQAnswer>): Promise<MCQAnswer | undefined> {
+    const [answer] = await db
+      .update(mcqAnswers)
+      .set(updates)
+      .where(
+        and(
+          eq(mcqAnswers.studentId, studentId),
+          eq(mcqAnswers.questionId, questionId)
+        )
+      )
+      .returning();
+    return answer || undefined;
+  }
+
+  // Coding Submission operations
+  async createCodingSubmission(insertSubmission: InsertCodingSubmission): Promise<CodingSubmission> {
+    const [submission] = await db
+      .insert(codingSubmissions)
+      .values(insertSubmission)
+      .returning();
+    return submission;
+  }
+
+  async getCodingSubmissionsByStudent(studentId: number): Promise<CodingSubmission[]> {
+    return await db.select().from(codingSubmissions).where(eq(codingSubmissions.studentId, studentId));
+  }
+
+  async getAllCodingSubmissions(): Promise<CodingSubmission[]> {
+    return await db.select().from(codingSubmissions);
+  }
+
+  async updateCodingSubmission(id: number, updates: Partial<CodingSubmission>): Promise<CodingSubmission | undefined> {
+    const [submission] = await db
+      .update(codingSubmissions)
+      .set(updates)
+      .where(eq(codingSubmissions.id, id))
+      .returning();
+    return submission || undefined;
+  }
+
+  // Assessment Result operations
+  async getAssessmentResult(studentId: number): Promise<AssessmentResult | undefined> {
+    const [result] = await db.select().from(assessmentResults).where(eq(assessmentResults.studentId, studentId));
+    return result || undefined;
+  }
+
+  async createAssessmentResult(insertResult: Partial<AssessmentResult>): Promise<AssessmentResult> {
+    const [result] = await db
+      .insert(assessmentResults)
+      .values(insertResult)
+      .returning();
+    return result;
+  }
+
+  async updateAssessmentResult(studentId: number, updates: Partial<AssessmentResult>): Promise<AssessmentResult | undefined> {
+    const [result] = await db
+      .update(assessmentResults)
+      .set(updates)
+      .where(eq(assessmentResults.studentId, studentId))
+      .returning();
+    return result || undefined;
+  }
+
+  async getAllAssessmentResults(): Promise<AssessmentResult[]> {
+    return await db.select().from(assessmentResults);
+  }
+
+  // Admin operations
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.email, email));
+    return admin || undefined;
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const [admin] = await db
+      .insert(admins)
+      .values(insertAdmin)
+      .returning();
+    return admin;
+  }
+
+  async getAllAdmins(): Promise<Admin[]> {
+    return await db.select().from(admins);
+  }
+}
+
+export const storage = new DatabaseStorage();
