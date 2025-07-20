@@ -5,6 +5,7 @@ import {
   mcqAnswers,
   codingSubmissions,
   assessmentResults,
+  admins,
   type Student,
   type InsertStudent,
   type MCQQuestion,
@@ -16,6 +17,8 @@ import {
   type CodingSubmission,
   type InsertCodingSubmission,
   type AssessmentResult,
+  type Admin,
+  type InsertAdmin,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -56,6 +59,11 @@ export interface IStorage {
   createAssessmentResult(result: Partial<AssessmentResult>): Promise<AssessmentResult>;
   updateAssessmentResult(studentId: number, updates: Partial<AssessmentResult>): Promise<AssessmentResult | undefined>;
   getAllAssessmentResults(): Promise<AssessmentResult[]>;
+
+  // Admin operations
+  getAdminByEmail(email: string): Promise<Admin | undefined>;
+  createAdmin(admin: InsertAdmin): Promise<Admin>;
+  getAllAdmins(): Promise<Admin[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -65,12 +73,14 @@ export class MemStorage implements IStorage {
   private mcqAnswers: Map<string, MCQAnswer>;
   private codingSubmissions: Map<number, CodingSubmission>;
   private assessmentResults: Map<number, AssessmentResult>;
+  private admins: Map<number, Admin>;
   private currentStudentId: number;
   private currentMCQQuestionId: number;
   private currentCodingProblemId: number;
   private currentMCQAnswerId: number;
   private currentCodingSubmissionId: number;
   private currentAssessmentResultId: number;
+  private currentAdminId: number;
 
   constructor() {
     this.students = new Map();
@@ -79,12 +89,14 @@ export class MemStorage implements IStorage {
     this.mcqAnswers = new Map();
     this.codingSubmissions = new Map();
     this.assessmentResults = new Map();
+    this.admins = new Map();
     this.currentStudentId = 1;
     this.currentMCQQuestionId = 1;
     this.currentCodingProblemId = 1;
     this.currentMCQAnswerId = 1;
     this.currentCodingSubmissionId = 1;
     this.currentAssessmentResultId = 1;
+    this.currentAdminId = 1;
 
     this.seedData();
   }
@@ -139,6 +151,13 @@ export class MemStorage implements IStorage {
     ];
 
     sampleProblems.forEach(problem => this.createCodingProblem(problem));
+
+    // Seed admin user
+    this.createAdmin({
+      email: "admin@codeassess.com",
+      password: "admin123", // In production, this should be hashed
+      name: "Administrator"
+    });
   }
 
   // Student operations
@@ -330,6 +349,26 @@ export class MemStorage implements IStorage {
 
   async getAllAssessmentResults(): Promise<AssessmentResult[]> {
     return Array.from(this.assessmentResults.values());
+  }
+
+  // Admin operations
+  async getAdminByEmail(email: string): Promise<Admin | undefined> {
+    return Array.from(this.admins.values()).find(admin => admin.email === email);
+  }
+
+  async createAdmin(insertAdmin: InsertAdmin): Promise<Admin> {
+    const id = this.currentAdminId++;
+    const admin: Admin = {
+      ...insertAdmin,
+      id,
+      createdAt: new Date(),
+    };
+    this.admins.set(id, admin);
+    return admin;
+  }
+
+  async getAllAdmins(): Promise<Admin[]> {
+    return Array.from(this.admins.values());
   }
 }
 

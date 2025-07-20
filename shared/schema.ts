@@ -67,6 +67,14 @@ export const assessmentResults = pgTable("assessment_results", {
   completedAt: timestamp("completed_at"),
 });
 
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertStudentSchema = createInsertSchema(students).pick({
   name: true,
   email: true,
@@ -103,6 +111,17 @@ export const insertCodingSubmissionSchema = createInsertSchema(codingSubmissions
   language: true,
 });
 
+export const insertAdminSchema = createInsertSchema(admins).pick({
+  email: true,
+  password: true,
+  name: true,
+});
+
+export const adminLoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
 export type Student = typeof students.$inferSelect;
 export type InsertStudent = z.infer<typeof insertStudentSchema>;
 export type MCQQuestion = typeof mcqQuestions.$inferSelect;
@@ -114,3 +133,6 @@ export type InsertMCQAnswer = z.infer<typeof insertMCQAnswerSchema>;
 export type CodingSubmission = typeof codingSubmissions.$inferSelect;
 export type InsertCodingSubmission = z.infer<typeof insertCodingSubmissionSchema>;
 export type AssessmentResult = typeof assessmentResults.$inferSelect;
+export type Admin = typeof admins.$inferSelect;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+export type AdminLogin = z.infer<typeof adminLoginSchema>;

@@ -9,6 +9,7 @@ import {
   insertCodingProblemSchema,
   insertMCQAnswerSchema,
   insertCodingSubmissionSchema,
+  adminLoginSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -334,6 +335,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(student);
     } catch (error) {
       res.status(500).json({ message: "Failed to end timer", error });
+    }
+  });
+
+  // Admin authentication routes
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const loginData = adminLoginSchema.parse(req.body);
+      const admin = await storage.getAdminByEmail(loginData.email);
+      
+      if (!admin || admin.password !== loginData.password) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // In production, you would use proper session management
+      res.json({ 
+        id: admin.id, 
+        email: admin.email, 
+        name: admin.name,
+        success: true 
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid login data", error });
     }
   });
 

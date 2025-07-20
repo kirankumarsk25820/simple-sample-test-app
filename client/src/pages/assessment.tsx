@@ -122,9 +122,6 @@ export default function Assessment() {
             <p className="text-slate-600 mb-6">
               Thank you for completing the coding assessment. Your results will be reviewed and you'll be contacted soon.
             </p>
-            <Link href="/admin">
-              <Button variant="outline">View Admin Panel</Button>
-            </Link>
           </CardContent>
         </Card>
       </div>
@@ -169,6 +166,16 @@ export default function Assessment() {
               {createStudentMutation.isPending ? 'Starting Assessment...' : 'Start Assessment'}
             </Button>
           </form>
+          
+          {/* Admin Login Link */}
+          <div className="mt-6 pt-4 border-t border-slate-200 text-center">
+            <p className="text-sm text-slate-600 mb-2">Administrator?</p>
+            <Link href="/admin-login">
+              <Button variant="ghost" size="sm" className="text-slate-600">
+                Admin Login
+              </Button>
+            </Link>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -194,9 +201,6 @@ export default function Assessment() {
                   >
                     Coding Challenge
                   </Button>
-                  <Link href="/admin">
-                    <Button variant="ghost" size="sm">Admin Panel</Button>
-                  </Link>
                 </div>
               </div>
               
