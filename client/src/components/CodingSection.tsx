@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Check, CheckCircle, XCircle, Clock } from "lucide-react";
 import CodeEditor from "./CodeEditor";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import type { CodingProblem } from "@shared/schema";
 
 interface CodingSectionProps {
@@ -22,7 +21,6 @@ export default function CodingSection({ studentId, onSectionComplete }: CodingSe
   const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState<any[]>([]);
   const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
-  const { toast } = useToast();
 
   const { data: problems = [], isLoading } = useQuery<CodingProblem[]>({
     queryKey: ['/api/coding-problems'],
@@ -45,31 +43,10 @@ export default function CodingSection({ studentId, onSectionComplete }: CodingSe
     onMutate: () => {
       setIsRunning(true);
     },
-    onSuccess: (result, variables) => {
+    onSuccess: (result) => {
       setTestResults(result.testResults || []);
-      // Always invalidate submissions for both run and submit
-      if (variables.isSubmission) {
+      if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['/api/coding-submissions/student', studentId] });
-        
-        // Show submission feedback
-        if (result.success) {
-          toast({
-            title: "Submission Successful! 🎉",
-            description: "All test cases passed! Your solution has been saved.",
-          });
-        } else if (result.score > 0) {
-          toast({
-            title: "Partial Success",
-            description: `Submission saved with score: ${result.score}%. Some test cases passed.`,
-            variant: "default"
-          });
-        } else {
-          toast({
-            title: "Submission Saved",
-            description: "Your solution has been saved, but no test cases passed. Keep working on it!",
-            variant: "destructive"
-          });
-        }
       }
     },
     onSettled: () => {
