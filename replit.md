@@ -116,6 +116,13 @@ Database connection is managed through Neon serverless PostgreSQL with automatic
 
 ## Recent Changes
 
+### Code Execution Fix (January 20, 2025)
+- Fixed Python execution error by installing Python 3.11
+- Added GCC and Java support for multi-language code execution  
+- Application now supports all programming languages (Python, JavaScript, Java, C++, C)
+- Improved error handling for student registration with specific messages for duplicate emails
+- Enhanced user experience with automatic email field clearing on duplicate email errors
+
 ### Database Migration (January 20, 2025)
 - Migrated from in-memory storage to PostgreSQL database
 - Implemented DatabaseStorage class replacing MemStorage

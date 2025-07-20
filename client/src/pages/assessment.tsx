@@ -26,6 +26,10 @@ export default function Assessment() {
   const createStudentMutation = useMutation({
     mutationFn: async (data: { name: string; email: string }) => {
       const response = await apiRequest('POST', '/api/students', data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw error;
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -34,10 +38,22 @@ export default function Assessment() {
       setCurrentSection('mcq');
       startTimer('mcq');
     },
-    onError: () => {
+    onError: (error: any) => {
+      let description = "Failed to register for assessment";
+      
+      if (error?.code === "EMAIL_EXISTS") {
+        description = error.message;
+        // Clear email field so user can enter a different one
+        setLoginForm(prev => ({ ...prev, email: '' }));
+      } else if (error?.code === "VALIDATION_ERROR") {
+        description = error.message;
+      } else if (error?.message) {
+        description = error.message;
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to register for assessment",
+        title: "Registration Error",
+        description,
         variant: "destructive"
       });
     }

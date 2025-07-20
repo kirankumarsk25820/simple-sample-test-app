@@ -19,8 +19,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const studentData = insertStudentSchema.parse(req.body);
       const student = await storage.createStudent(studentData);
       res.json(student);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid student data", error });
+    } catch (error: any) {
+      // Check for unique constraint violation (email already exists)
+      if (error?.code === '23505' && error?.constraint === 'students_email_unique') {
+        return res.status(400).json({ 
+          message: "This email is already registered. Please use a different email address or contact support if this is your email.",
+          code: "EMAIL_EXISTS"
+        });
+      }
+      
+      // Check for Zod validation errors
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Please check your name and email format.",
+          code: "VALIDATION_ERROR",
+          details: error.issues
+        });
+      }
+      
+      console.error("Student registration error:", error);
+      res.status(500).json({ 
+        message: "An error occurred during registration. Please try again.",
+        code: "REGISTRATION_ERROR"
+      });
     }
   });
 
