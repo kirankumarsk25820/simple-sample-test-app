@@ -124,22 +124,92 @@ export default function Assessment() {
     });
   };
 
+  // Fetch assessment results if completed
+  const { data: assessmentResult } = useQuery({
+    queryKey: ['/api/assessment-results/student', student?.id],
+    enabled: currentSection === 'completed' && !!student?.id,
+  });
+
+  const { data: mcqAnswers } = useQuery({
+    queryKey: ['/api/mcq-answers/student', student?.id],
+    enabled: currentSection === 'completed' && !!student?.id,
+  });
+
+  const { data: codingSubmissions } = useQuery({
+    queryKey: ['/api/coding-submissions/student', student?.id],
+    enabled: currentSection === 'completed' && !!student?.id,
+  });
+
   if (currentSection === 'completed') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-semibold text-slate-800 mb-2">Assessment Completed!</h2>
-            <p className="text-slate-600 mb-6">
-              Thank you for completing the coding assessment. Your results will be reviewed and you'll be contacted soon.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-slate-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <Card className="mb-6">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">Assessment Completed!</h1>
+              <p className="text-slate-600 mb-4">
+                Congratulations {student?.name}! You have successfully completed the coding assessment.
+              </p>
+              
+              {assessmentResult && (
+                <div className="bg-slate-50 rounded-lg p-6 mt-6">
+                  <h2 className="text-xl font-semibold text-slate-800 mb-4">Your Results</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600 mb-1">
+                        {assessmentResult.mcqScore}%
+                      </div>
+                      <div className="text-sm text-slate-600">MCQ Score</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {mcqAnswers?.length || 0} questions answered
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600 mb-1">
+                        {assessmentResult.codingScore}%
+                      </div>
+                      <div className="text-sm text-slate-600">Coding Score</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {codingSubmissions?.length || 0} problems attempted
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-purple-600 mb-1">
+                        {assessmentResult.totalScore}%
+                      </div>
+                      <div className="text-sm text-slate-600">Overall Score</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        Total time: {Math.round((assessmentResult.mcqTimeSpent + assessmentResult.codingTimeSpent) / 60)} minutes
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-8">
+                <p className="text-slate-600 mb-4">
+                  Your detailed results have been saved. Our team will review your submission and get back to you soon.
+                </p>
+                <Link href="/admin-login">
+                  <Button variant="outline" className="mr-4">
+                    Admin Panel
+                  </Button>
+                </Link>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  variant="default"
+                >
+                  Take Another Assessment
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

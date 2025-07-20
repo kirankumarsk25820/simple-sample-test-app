@@ -445,15 +445,164 @@ function QuestionManagement({ questions }: any) {
 }
 
 function CodingProblemManagement({ problems }: any) {
+  const [isCreating, setIsCreating] = useState(false);
+
+  const form = useForm({
+    resolver: zodResolver(insertCodingProblemSchema.extend({
+      tags: z.array(z.string()).min(1, "Must have at least one tag"),
+      testCases: z.array(z.object({
+        input: z.string(),
+        expectedOutput: z.string(),
+        explanation: z.string().optional()
+      })).min(1, "Must have at least one test case"),
+      templateCode: z.object({
+        python: z.string().optional(),
+        javascript: z.string().optional(),
+        java: z.string().optional(),
+        cpp: z.string().optional(),
+        c: z.string().optional()
+      })
+    })),
+    defaultValues: {
+      title: "",
+      description: "",
+      difficulty: "",
+      tags: [],
+      testCases: [{ input: "", expectedOutput: "", explanation: "" }],
+      templateCode: {
+        python: "def solution():\n    # Your solution here\n    pass",
+        javascript: "function solution() {\n    // Your solution here\n}",
+        java: "public class Solution {\n    public void solution() {\n        // Your solution here\n    }\n}",
+        cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your solution here\n    return 0;\n}",
+        c: "#include <stdio.h>\n\nint main() {\n    // Your solution here\n    return 0;\n}"
+      },
+      constraints: ""
+    },
+  });
+
+  const createProblemMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/coding-problems', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coding-problems'] });
+      setIsCreating(false);
+      form.reset();
+    },
+  });
+
+  const deleteProblemMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/coding-problems/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coding-problems'] });
+    },
+  });
+
+  const onSubmit = (data: any) => {
+    createProblemMutation.mutate(data);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold text-slate-800">Manage Coding Problems</h3>
-        <Button>
+        <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
           <Plus className="h-4 w-4 mr-2" />
           Add Problem
         </Button>
       </div>
+
+      {isCreating && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Coding Problem</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Problem Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter problem title..." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Problem Description</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Describe the problem..." className="min-h-[100px]" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="difficulty"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Difficulty</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select difficulty" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Easy">Easy</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Hard">Hard</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="constraints"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Constraints (Optional)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g., 1 ≤ n ≤ 10^5" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex space-x-3">
+                  <Button type="submit" disabled={createProblemMutation.isPending}>
+                    {createProblemMutation.isPending ? 'Saving...' : 'Save Problem'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -475,10 +624,18 @@ function CodingProblemManagement({ problems }: any) {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => {
+                      // TODO: Implement edit functionality
+                      console.log('Edit problem:', problem.id);
+                    }}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="destructive">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteProblemMutation.mutate(problem.id)}
+                      disabled={deleteProblemMutation.isPending}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
